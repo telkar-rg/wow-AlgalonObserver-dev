@@ -1,0 +1,16 @@
+## Interface: 30200
+## Title: AlgalonObserver
+## Notes: Raid warnings and extra awareness for the Algalon encounter.
+## Version: 1.3
+## X-Category: Raid
+## X-Build: $Rev: 2 $
+## Author: Anyia of HordeYakka (Jubei'Thos)
+## SavedVariables: AlgalonObserverDB
+## X-Curse-Packaged-Version: 1.3
+## X-Curse-Project-Name: AlgalonObserver
+## X-Curse-Project-ID: algalonobserver
+## X-Curse-Repository-ID: wow/algalonobserver/mainline
+
+embeds.xml
+AlgalonObserver.lua
+frames.lua
