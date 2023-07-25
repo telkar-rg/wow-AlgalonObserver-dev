@@ -2,6 +2,7 @@
 local NAME = "AlgalonObserver"
 AlgalonObserver = LibStub ("AceAddon-3.0"):NewAddon (NAME, "AceConsole-3.0", "AceEvent-3.0", "AceComm-3.0", "AceSerializer-3.0")
 local AO = AlgalonObserver
+local L = LibStub("AceLocale-3.0"):GetLocale(NAME)
 
 local options = {
     type = 'group',
@@ -139,12 +140,13 @@ function AO:OnProfileChanged ()
 end
 
 -- Constants
-local STAR = "Collapsing Star"
-local HOLE = "Black Hole"
-local BIGAL = "Algalon the Observer"
-local BB_ID = 64443
-local CS_ID = 62301
-local BHE_ID = 64122
+local STAR_ID = 32955
+-- local HOLE_ID = 32953
+local BIGAL_ID = 32871
+
+local BB_ID = 64443		--Urknall
+local CS_ID = 62301		--Kosmischer Schlag
+local BHE_ID = 64122	--Schwarzes Loch
 
 -- Star bar support
 local function take_first_free_bar ()
@@ -166,11 +168,11 @@ end
 
 -- Debug aids
 function AO:test_cs ()
-    self:COMBAT_LOG_EVENT_UNFILTERED ("", 0, "SPELL_CAST_SUCCESS",0xF13000806712FAC4,"Algalon the Observer",0x10a28,0x0000000000000000,nil,0x80000000,62301,"Cosmic Smash",0x40)
+    self:COMBAT_LOG_EVENT_UNFILTERED ("", 0, "SPELL_CAST_SUCCESS",0xF13000806712FAC4,L["Algalon the Observer"],0x10a28,0x0000000000000000,nil,0x80000000,62301,"Cosmic Smash",0x40)
 end
 
 function AO:test_bb ()
-    self:COMBAT_LOG_EVENT_UNFILTERED ("", 0, "SPELL_CAST_START",0xF13000806713022D,"Algalon the Observer",0xa28,0x0000000000000000,nil,0x80000000,64443,"Big Bang",0x1)
+    self:COMBAT_LOG_EVENT_UNFILTERED ("", 0, "SPELL_CAST_START",0xF13000806713022D,L["Algalon the Observer"],0xa28,0x0000000000000000,nil,0x80000000,64443,"Big Bang",0x1)
 end
 
 function AO:test_hole ()
@@ -178,7 +180,7 @@ function AO:test_hole ()
 end
 
 function AO:test_p2 ()
-    self:CHAT_MSG_MONSTER_YELL ("", "Behold the tools of creation!", BIGAL, "", "", "")
+    self:CHAT_MSG_MONSTER_YELL ("", "Behold the tools of creation!", L["Algalon the Observer"], "", "", "")
 end
 
 function AO:test_star ()
@@ -261,7 +263,10 @@ function AO:OnStarHealthUpdate ()
     do
         local target = "raid"..i.."target"
         local name = UnitName (target)
-        if name and name == STAR then
+        local targetID = AO:GetUnitCreatureId(target)
+		
+        -- if name and name == STAR then	-- old solution: Check for NPC name
+        if name and targetID == STAR_ID then	-- new solution: chock for unit ID
             local id = UnitGUID (target)
             local bar = self.stars[id]
             if bar then
@@ -332,10 +337,12 @@ end
 
 -- Low-level event handling
 function AO:COMBAT_LOG_EVENT_UNFILTERED(eventName, time, event, srcId, srcName, srcFlags, dstID, dstName, dstFlags, spellID, spellName)
-    if spellID == BB_ID and event == "SPELL_CAST_START" and srcName == BIGAL
+    -- if spellID == BB_ID and event == "SPELL_CAST_START" and srcName == BIGAL 	-- old solution: check name
+    if spellID == BB_ID and event == "SPELL_CAST_START" 	-- Big Bang is only cast by alga
     then
         self:OnBigBang ()
-    elseif spellID == CS_ID and event == "SPELL_CAST_SUCCESS" and srcName == BIGAL
+    -- elseif spellID == CS_ID and event == "SPELL_CAST_SUCCESS" and srcName == BIGAL
+    elseif spellID == CS_ID and event == "SPELL_CAST_SUCCESS" 
     then
         self:OnCosmicSmash ()
     elseif spellID == BHE_ID and event == "SPELL_CAST_SUCCESS"
@@ -345,7 +352,7 @@ function AO:COMBAT_LOG_EVENT_UNFILTERED(eventName, time, event, srcId, srcName, 
 end
 
 function AO:CHAT_MSG_MONSTER_YELL(eventName, msg, sender, lang, channel, target)
-    if sender == BIGAL and msg == "Behold the tools of creation!" then
+    if sender == L["Algalon the Observer"] and msg == "Behold the tools of creation!" then
         -- p2 just began, dismiss star tracking
         self:dismiss_star_tracking ()
         self:Print ("entering phase2 - further star tracking disabled")
@@ -369,7 +376,9 @@ function AO:OnUpdate (t)
     end
 
     local mtarget = UnitName ("mouseover")
-    if mtarget and mtarget == STAR then
+    local mtargetID = AO:GetUnitCreatureId("mouseover")
+    -- if mtarget and mtarget == STAR then
+    if mtarget and mtargetID == STAR_ID then
         local id = UnitGUID ("mouseover")
         if not self.stars[id] then
             local health = UnitHealth ("mouseover")
@@ -398,8 +407,10 @@ end
 
 -- Enabling triggers - either targeting Algalon or walking into the planetarium
 function AO:PLAYER_TARGET_CHANGED ()
-    local target = UnitName ("target")
-    if target == BIGAL then
+    local targetName = UnitName ("target")
+	local targetID = AO:GetUnitCreatureId("target")
+    -- if target == BIGAL then
+    if targetName and targetID == BIGAL_ID then
         if UnitCanAttack ("player", "target") then
             self:do_enable ()
         else
@@ -410,9 +421,14 @@ end
 
 function AO:OnZoneChange ()
     self:do_disable ()
-    local TCP = "The Celestial Planetarium"
-    if GetMinimapZoneText () == TCP or GetSubZoneText () == TCP then
+	
+    -- local TCP = "The Celestial Planetarium"
+	-- self:Print("--debug", GetCurrentMapAreaID(), GetCurrentMapDungeonLevel(), x)
+	
+	if GetMinimapZoneText () == L["The Celestial Planetarium"] or GetSubZoneText () == L["The Celestial Planetarium"] then
+    -- if GetCurrentMapAreaID() == UlduarMapAreaID and GetCurrentMapDungeonLevel() == 2 and x > 0.6  then
         self:do_enable ()
+		
     end
 end
 
@@ -534,3 +550,8 @@ function AO:OnEnable ()
     self:RegisterEvent ("ZONE_CHANGED_NEW_AREA")
 end
 
+
+function AO:GetUnitCreatureId(unitID)
+	local guid = UnitGUID(unitID)
+	return (guid and tonumber(guid:sub(9, 12), 16)) or 0
+end

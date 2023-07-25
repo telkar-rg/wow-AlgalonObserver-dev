@@ -1,7 +1,7 @@
-## Interface: 30200
-## Title: AlgalonObserver
+## Interface: 30300
+## Title: Algalon Observer 1.4.0
 ## Notes: Raid warnings and extra awareness for the Algalon encounter.
-## Version: 1.3
+## Version: 1.4.0
 ## X-Category: Raid
 ## X-Build: $Rev: 2 $
 ## Author: Anyia of HordeYakka (Jubei'Thos)
@@ -12,5 +12,14 @@
 ## X-Curse-Repository-ID: wow/algalonobserver/mainline
 
 embeds.xml
+
+Locales\enUS.lua
+Locales\deDE.lua
+Locales\frFR.lua
+Locales\koKR.lua
+Locales\ruRU.lua
+Locales\zhCN.lua
+Locales\zhTW.lua
+
 AlgalonObserver.lua
 frames.lua
