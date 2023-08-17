@@ -109,7 +109,7 @@ local defaults = {
 
         locked = true,
         width = 180,
-        maxstars = 4,
+        maxstars = 6,
         x = 300,
         y = 300,
         starhealth = 88200,
@@ -144,14 +144,14 @@ local STAR_ID = 32955
 -- local HOLE_ID = 32953
 local BIGAL_ID = 32871
 
+-- spell
 local BB_ID = 64443		--Urknall
 local CS_ID = 62301		--Kosmischer Schlag
 local BHE_ID = 64122	--Schwarzes Loch
 
 -- Star bar support
-local function take_first_free_bar ()
-    for i = 1, AO.db.profile.maxstars
-    do
+local function take_first_free_bar()
+    for i = 1, AO.db.profile.maxstars do
         local b = AO.frames.bars[i]
         if b and b.AO_free then
             b.AO_free = nil
@@ -161,8 +161,8 @@ local function take_first_free_bar ()
     return nil
 end
 
-local function release_bar (bar)
-    bar:Hide ()
+local function release_bar(bar)
+    bar:Hide()
     bar.AO_free = true
 end
 
@@ -180,7 +180,7 @@ function AO:test_hole ()
 end
 
 function AO:test_p2 ()
-    self:CHAT_MSG_MONSTER_YELL ("", "Behold the tools of creation!", L["Algalon the Observer"], "", "", "")
+    self:CHAT_MSG_MONSTER_YELL ("", L["Yell_P2"], L["Algalon the Observer"], "", "", "")
 end
 
 function AO:test_star ()
@@ -259,9 +259,8 @@ function AO:OnStarHealthUpdate ()
     end
 
     -- scan raid members' targets, if any is a star, grab the health info from it
-    for i = 1, GetNumRaidMembers ()
-    do
-        local target = "raid"..i.."target"
+    for i = 1, GetNumRaidMembers() do
+        local target = "raid"..tostring(i).."target"
         local name = UnitName (target)
         local targetID = AO:GetUnitCreatureId(target)
 		
@@ -300,7 +299,7 @@ function AO:OnStarHealthUpdate ()
         bar:SetStatusBarColor (c.r, c.g, c.b, c.a)
 
         -- if health drops below n%, trigger warning beeps
-        local health = bar:GetValue ()
+        local health = bar:GetValue()
         if health < (percent * self.db.profile.lowhealth) then
             if self.db.profile.starsounds then
                 PlaySoundFile ("Interface\\AddOns\\AlgalonObserver\\Sounds\\biips.mp3")
@@ -315,51 +314,56 @@ function AO:OnStarHealthUpdate ()
     end
 end
 
-function AO:OnBlackHoleExplosion ()
-    local id = 0
-    local health = 100000000
-    for i, bar in pairs (self.stars)
-    do
-        local h = bar:GetValue ()
-        if h < health then
-            id = i
-            health = h
+function AO:OnBlackHoleExplosion(id)
+	local bar = self.stars[id]
+	if bar then 	-- release exploded star
+		release_bar(bar)
+		self.stars[id] = nil
+	end
+	
+	-- check for other stars that are gone by now
+    for i, bar in pairs (self.stars) do
+        local h = bar:GetValue()
+        if h < 200 then 	-- has less than 200 hp
+            release_bar(bar)
+			self.stars[i] = nil
         end
     end
-    -- Remove the star with the lowest health
-    local bar = self.stars[id]
-    self.stars[id] = nil
-    if not bar then return end -- Mr Justin Case
-    release_bar (bar)
 end
 
 
 
 -- Low-level event handling
-function AO:COMBAT_LOG_EVENT_UNFILTERED(eventName, time, event, srcId, srcName, srcFlags, dstID, dstName, dstFlags, spellID, spellName)
-    -- if spellID == BB_ID and event == "SPELL_CAST_START" and srcName == BIGAL 	-- old solution: check name
-    if spellID == BB_ID and event == "SPELL_CAST_START" 	-- Big Bang is only cast by alga
-    then
-        self:OnBigBang ()
-    -- elseif spellID == CS_ID and event == "SPELL_CAST_SUCCESS" and srcName == BIGAL
-    elseif spellID == CS_ID and event == "SPELL_CAST_SUCCESS" 
-    then
-        self:OnCosmicSmash ()
-    elseif spellID == BHE_ID and event == "SPELL_CAST_SUCCESS"
-    then
-        self:OnBlackHoleExplosion ()
+function AO:COMBAT_LOG_EVENT_UNFILTERED(eventName, tstmp, combatevent, srcId, srcName, srcFlags, dstID, dstName, dstFlags, spellID, spellName)
+    -- if spellID == BB_ID and combatevent == "SPELL_CAST_START" and srcName == BIGAL 	-- old solution: check name
+    if combatevent == "SPELL_CAST_START" then
+		if spellID == BB_ID then -- Big Bang is only cast by alga
+			self:OnBigBang()
+		end
+		
+    -- elseif spellID == CS_ID and combatevent == "SPELL_CAST_SUCCESS" and srcName == BIGAL
+    elseif combatevent == "SPELL_CAST_SUCCESS" then
+		if spellID == CS_ID then
+			self:OnCosmicSmash()
+		end
+		
+    elseif combatevent == "SPELL_DAMAGE" then
+		if spellID == BHE_ID and (not self.stars_exploded[srcId]) then
+			self.stars_exploded[srcId] = true
+			self:OnBlackHoleExplosion(srcId)
+		end
     end
 end
 
-function AO:CHAT_MSG_MONSTER_YELL(eventName, msg, sender, lang, channel, target)
-    if sender == L["Algalon the Observer"] and msg == "Behold the tools of creation!" then
+function AO:CHAT_MSG_MONSTER_YELL(eventName, msg, sender)
+    if sender == L["Algalon the Observer"] and msg == L["Yell_P2"] then
         -- p2 just began, dismiss star tracking
-        self:dismiss_star_tracking ()
-        self:Print ("entering phase2 - further star tracking disabled")
+        self:dismiss_star_tracking()
+        self:Print("entering phase2 - further star tracking disabled")
     end
 end
 
-function AO:OnUpdate (t)
+function AO:OnUpdate(t)
     elapsed = t
     if self.countdownbb then
         if not coroutine.resume (self.countdownbb) then
@@ -392,65 +396,68 @@ function AO:OnUpdate (t)
     end
 end
 
-function AO:OnComm (prefix, message, distribution, sender)
+function AO:OnComm(prefix, message, distribution, sender)
     if prefix ~= NAME then return end
     local success, msgtype, id, health = self:Deserialize (message)
     if not success then return end
-    if self.stars[id] then return end
-
-    local bar = take_first_free_bar ()
+	
+	local bar = self.stars[id]
+    if bar then 
+		local h = bar:GetValue()
+		bar:SetValue(math.min(h, health))
+		return
+	end
+	
+	-- if no bar then make one
+    bar = take_first_free_bar()
     if not bar then return end
-    bar:SetValue (health)
+	
+    bar:SetValue(health)
     self.stars[id] = bar
     bar:Show()
 end
 
 -- Enabling triggers - either targeting Algalon or walking into the planetarium
-function AO:PLAYER_TARGET_CHANGED ()
+function AO:PLAYER_TARGET_CHANGED()
     local targetName = UnitName ("target")
 	local targetID = AO:GetUnitCreatureId("target")
     -- if target == BIGAL then
     if targetName and targetID == BIGAL_ID then
-        if UnitCanAttack ("player", "target") then
-            self:do_enable ()
+        if UnitCanAttack("player", "target") then
+            self:do_enable()
         else
-            self:do_disable () -- woot, he's green!
+            self:do_disable() -- woot, he's green!
         end
     end
 end
 
-function AO:OnZoneChange ()
-    self:do_disable ()
-	
-    -- local TCP = "The Celestial Planetarium"
-	-- self:Print("--debug", GetCurrentMapAreaID(), GetCurrentMapDungeonLevel(), x)
-	
-	if GetMinimapZoneText () == L["The Celestial Planetarium"] or GetSubZoneText () == L["The Celestial Planetarium"] then
-    -- if GetCurrentMapAreaID() == UlduarMapAreaID and GetCurrentMapDungeonLevel() == 2 and x > 0.6  then
-        self:do_enable ()
-		
+function AO:OnZoneChange()
+	-- enable only if in Planetarium zone
+	if GetMinimapZoneText() == L["The Celestial Planetarium"] or GetSubZoneText() == L["The Celestial Planetarium"] then
+        self:do_enable()
+	else
+		self:do_disable()
     end
 end
 
-function AO:ZONE_CHANGED ()
-    self:OnZoneChange ()
+function AO:ZONE_CHANGED()
+    self:OnZoneChange()
 end
 
-function AO:ZONE_CHANGED_INDOORS ()
-    self:OnZoneChange ()
+function AO:ZONE_CHANGED_INDOORS()
+    self:OnZoneChange()
 end
 
-function AO:ZONE_CHANGED_NEW_AREA ()
-    self:OnZoneChange ()
+function AO:ZONE_CHANGED_NEW_AREA()
+    self:OnZoneChange()
 end
 
 -- Initialisation related stuff
-function AO:dismiss_star_tracking ()
+function AO:dismiss_star_tracking()
     self.frames.starframe:Hide()
-    for i = 1, self.db.profile.maxstars
-    do
+    for i = 1, self.db.profile.maxstars do
         local bar = self.frames.bars[i]
-        release_bar (bar)
+        release_bar(bar)
     end
     if self.starhealth then coroutine.resume (self.starhealth, true) end -- ask it to exit
     self.starhealth = nil
@@ -464,8 +471,11 @@ function AO:do_enable ()
 
     self:RegisterEvent ("COMBAT_LOG_EVENT_UNFILTERED")
     self:RegisterEvent ("CHAT_MSG_MONSTER_YELL")
+    self:RegisterEvent ("PLAYER_TARGET_CHANGED")
     self:RegisterComm (NAME, "OnComm")
+	
     self.stars = {}
+    self.stars_exploded = {}
     self.starhealth = coroutine.create (count_down_star_health)
     self.frames.main:SetScript ("OnUpdate", function (_, t) AO:OnUpdate (t) end)
     if self.db.profile.starvisuals then
@@ -485,6 +495,7 @@ function AO:do_disable ()
     self.frames.main:SetScript ("OnUpdate", nil)
     self:UnregisterEvent ("COMBAT_LOG_EVENT_UNFILTERED")
     self:UnregisterEvent ("CHAT_MSG_MONSTER_YELL")
+    self:UnregisterEvent ("PLAYER_TARGET_CHANGED")
     self:dismiss_star_tracking ()
 
     self:Print ("now inactive")
@@ -544,7 +555,6 @@ end
 
 function AO:OnEnable ()
     -- Set up the triggers to do the actual initialisation if/when needed
-    self:RegisterEvent ("PLAYER_TARGET_CHANGED")
     self:RegisterEvent ("ZONE_CHANGED")
     self:RegisterEvent ("ZONE_CHANGED_INDOORS")
     self:RegisterEvent ("ZONE_CHANGED_NEW_AREA")
