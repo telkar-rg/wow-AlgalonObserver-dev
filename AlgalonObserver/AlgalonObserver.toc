@@ -1,7 +1,7 @@
 ## Interface: 30300
-## Title: Algalon Observer 1.4.0
+## Title: Algalon Observer 1.4.1
 ## Notes: Raid warnings and extra awareness for the Algalon encounter.
-## Version: 1.4.0
+## Version: 1.4.1
 ## X-Category: Raid
 ## X-Build: $Rev: 2 $
 ## Author: Anyia of HordeYakka (Jubei'Thos)
