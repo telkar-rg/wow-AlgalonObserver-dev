@@ -4,3 +4,4 @@ if not L then return end
 
 L["Algalon the Observer"] = true
 L["The Celestial Planetarium"] = true
+L["Yell_P2"] = 'Behold the tools of creation!'

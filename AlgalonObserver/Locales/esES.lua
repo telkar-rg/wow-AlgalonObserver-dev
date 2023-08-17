@@ -4,3 +4,4 @@ if not L then return end
 
 L["Algalon the Observer"] = "Algalon el Observador"
 L["The Celestial Planetarium"] = "El Planetario Celestial"
+L["Yell_P2"] = '¡Observad las herramientas de la creación!'
