@@ -3,5 +3,6 @@ local L = AceLocale:NewLocale("AlgalonObserver", "deDE")
 if not L then return end
 
 L["Algalon the Observer"] = "Algalon der Beobachter"
+L["Collapsing Star"] = "Kollabierender Stern"
 L["The Celestial Planetarium"] = "Das himmlische Planetarium"
 L["Yell_P2"] = 'Erblicket die Instrumente der Schöpfung!'
