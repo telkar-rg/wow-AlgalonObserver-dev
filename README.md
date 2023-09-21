@@ -4,6 +4,9 @@ AlgalonObserver addon updated for WotLK 3.3.5
 ### [Releases](https://github.com/telkar-rg/wow-AlgalonObserver-dev/releases)
 
 ## Changes
+- v1.4.2
+  - Fixed star health difference in 10/25 player version
+  - Added star hp update events
 - v1.4.1
   - Show up to 6 collapsing stars in tracker window
   - Updated detection of phase 2 for different language clients
