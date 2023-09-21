@@ -4,6 +4,10 @@ AlgalonObserver = LibStub("AceAddon-3.0"):NewAddon(NAME, "AceConsole-3.0", "AceE
 local AO = AlgalonObserver
 local L = LibStub("AceLocale-3.0"):GetLocale(NAME)
 
+
+local starHP = 88200
+
+
 local options = {
 	type = 'group',
 	handler = AO,
@@ -154,6 +158,7 @@ local function take_first_free_bar()
 	for i = 1, AO.db.profile.maxstars do
 		local b = AO.frames.bars[i]
 		if b and b.AO_free then
+			b:SetMinMaxValues (0, starHP)
 			b.AO_free = nil
 			return b
 		end
@@ -187,7 +192,7 @@ function AO:test_star()
 	local id = GetTime()
 	local bar = take_first_free_bar()
 	if not bar then return end
-	bar:SetValue(self.db.profile.starhealth)
+	bar:SetValue(starHP)
 	bar:Show()
 	self.stars[id] = bar
 end
@@ -249,7 +254,7 @@ function AO:OnCosmicSmash()
 end
 
 function AO:OnStarHealthUpdate() 	-- called every second to subtract 1% HP
-	local percent = self.db.profile.starhealth / 100 	-- 1% of star maxHP
+	local percent = starHP / 100 	-- 1% of star maxHP
 	for id, bar in pairs(self.stars ) do  -- subtract 882 health from each star we know about
 		self:SetStarHealth(id, -percent)
 		bar.AO_targeted = false
@@ -411,7 +416,7 @@ function AO:SetStarHealth(guid, health, takeMin)
 	if not bar then 	-- make new bar, if star is not yet tracked
 		bar = take_first_free_bar()
 		if not bar then return end 	-- stop if we have no place for star hp
-		bar:SetValue(AO.db.profile.starhealth)
+		bar:SetValue(starHP)
 		self.stars[guid] = bar
 		bar:Show()
 	end
@@ -488,6 +493,18 @@ end
 
 function AO:ZONE_CHANGED_NEW_AREA()
 	self:OnZoneChange()
+end
+
+function AO:PLAYER_ENTERING_WORLD()
+	self:OnZoneChange()
+	
+	-- starhealth depends on instance size
+	local Iname, Itype, IdifficultyIndex, IdifficultyName, ImaxPlayers = GetInstanceInfo()
+	if ImaxPlayers == 10 then
+		starHP = 88200
+	elseif ImaxPlayers == 25 then
+		starHP = 176400
+	end
 end
 
 
@@ -567,9 +584,10 @@ end
 -- Addon events
 function AO:OnChatCmd(arg)
 	if not arg or arg == "" then
-		self:Print("/algalon <config|on|off|status>");   
-	elseif arg == "config" then
-		InterfaceOptionsFrame_OpenToCategory(self.cfgdlg.BlizOptions[NAME].frame)
+		self:Print("/algalon <on|off|status>");
+		self:Print("/ao <on|off|status>");
+	-- elseif arg == "config" then
+		-- InterfaceOptionsFrame_OpenToCategory(self.cfgdlg.BlizOptions[NAME].frame)
 	elseif arg == "on" then
 		self:do_enable()
 	elseif arg == "off" then
@@ -597,6 +615,7 @@ function AO:OnInitialize()
 	self.cfgdlg:AddToBlizOptions(NAME, GetAddOnMetadata(NAME, "Title"))
 	
 	self:RegisterChatCommand("algalon", "OnChatCmd")
+	self:RegisterChatCommand("ao", "OnChatCmd")
 
 	-- Prepare config db
 	self.db = LibStub("AceDB-3.0"):New("AlgalonObserverDB", defaults)
@@ -611,6 +630,7 @@ function AO:OnEnable()
 	self:RegisterEvent("ZONE_CHANGED")
 	self:RegisterEvent("ZONE_CHANGED_INDOORS")
 	self:RegisterEvent("ZONE_CHANGED_NEW_AREA")
+	self:RegisterEvent("PLAYER_ENTERING_WORLD")
 end
 
 

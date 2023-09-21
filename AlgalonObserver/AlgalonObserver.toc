@@ -1,6 +1,6 @@
 ## Interface: 30300
-## Title: Algalon Observer 1.4.1
-## Notes: Raid warnings and extra awareness for the Algalon encounter.
+## Title: Algalon Observer |cff7777ff1.4.1|r
+## Notes: Raid warnings and extra awareness for the Algalon encounter.|n|cff33ff99/algalon <on|off|status>|r|n|cff7777ff/ao <on|off|status>|r
 ## Version: 1.4.1
 ## X-Category: Raid
 ## X-Build: $Rev: 2 $
