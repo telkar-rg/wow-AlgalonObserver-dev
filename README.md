@@ -1,7 +1,7 @@
 # wow-AlgalonObserver-dev
 AlgalonObserver addon updated for WotLK 3.3.5
 
-[AlgalonObserver (WowAce)](https://web.archive.org/web/20230921093016/https://www.wowace.com/projects/algalonobserver)
+[AlgalonObserver original (WowAce)](https://web.archive.org/web/20230921093016/https://www.wowace.com/projects/algalonobserver)
 
 ### [Releases](https://github.com/telkar-rg/wow-AlgalonObserver-dev/releases)
 
